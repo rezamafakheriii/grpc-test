@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 
+	"grpc-test/interceptor"
 	pb "grpc-test/proto" // Replace with the correct import path
 
+	logger "github.com/revotech-group/go-lib/log"
 	"google.golang.org/grpc"
 )
 
@@ -25,15 +28,20 @@ func (s *orderServer) PlaceOrder(ctx context.Context, req *pb.OrderRequest) (*pb
 		Amount:     float32(req.Quantity) * 100, // Example calculation
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to charge customer: %v", err)
+		return nil, err
 	}
 
 	return &pb.OrderResponse{
 		Message: fmt.Sprintf("Order placed for %d x %s. %s", req.Quantity, req.Product, chargeResponse.Message),
 	}, nil
+
+	// return nil, domain.ProductNotFoundErr()
 }
 
 func main() {
+	serviceName := "order-service"
+	debugMode := true
+	logger.SetupDefaultLogger(slog.LevelDebug, true)
 	// Connect to the Charge Server
 	chargeConn, err := grpc.Dial("localhost:50052", grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
@@ -49,7 +57,9 @@ func main() {
 		log.Fatalf("Failed to listen: %v", err)
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(interceptor.UnaryServerInterceptor(serviceName, debugMode)),
+	)
 	pb.RegisterOrderServer(grpcServer, &orderServer{chargeClient: chargeClient})
 
 	log.Println("Order Server is running on port 50051...")
