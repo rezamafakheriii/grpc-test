@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package productorder;
+
+option go_package = ".;productorder";
+
+service ProductOrderService {
+  rpc ListProducts(Empty) returns (ProductList);
+  rpc PlaceOrder(OrderRequest) returns (OrderResponse);
+}
+
+message Empty {}
+
+message Product {
+  string id = 1;
+  string name = 2;
+  float price = 3;
+}
+
+message ProductList {
+  repeated Product products = 1;
+}
+
+message OrderItem {
+  string product_id = 1;
+  int32 quantity = 2;
+}
+
+message OrderRequest {
+  string customer_id = 1;
+  repeated OrderItem items = 2;
+}
+
+message OrderResponse {
+  string order_id = 1;
+  float total_price = 2;
+}
