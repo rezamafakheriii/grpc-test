@@ -75,12 +75,20 @@ func UnaryServerInterceptor(serviceName string, debugMode bool) grpc.UnaryServer
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (resp interface{}, err error) {
+
 		defer func() {
 			if r := recover(); r != nil {
 				if debugMode {
-					log.Printf("Recovered from panic in %s: %v\n%s", info.FullMethod, r, string(debug.Stack()))
+					slog.Error("Recovered from panic",
+						slog.String("method", info.FullMethod),
+						slog.Any("error", r),
+						slog.String("stack_trace", string(debug.Stack())),
+					)
 				} else {
-					log.Printf("Recovered from panic in %s: %v", info.FullMethod, r)
+					slog.Error("Recovered from panic",
+						slog.String("method", info.FullMethod),
+						slog.Any("error", r),
+					)
 				}
 
 				err = recoverFrom(serviceName, r)
@@ -145,11 +153,6 @@ func MapAppErrorToGRPC(appErr errlib.AppError, serviceName string) error {
 }
 
 func recoverFrom(serviceName string, _ any) error {
-
-	// // Capture the stack trace
-	// stack := make([]byte, 64<<10) // 64 KB
-	// stack = stack[:runtime.Stack(stack, false)]
-
 	st := status.New(codes.Internal, "Internal server error")
 
 	errorInfo := &errdetails.ErrorInfo{
