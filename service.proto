@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package service;
+
+option go_package = ".;proto";
+
+// Order Service
+service Order {
+  rpc PlaceOrder (OrderRequest) returns (OrderResponse);
+}
+
+// Charge Service
+service Charge {
+  rpc ChargeCustomer (ChargeRequest) returns (ChargeResponse);
+}
+
+// Messages for Order Service
+message OrderRequest {
+  string product = 1;
+  int32 quantity = 2;
+}
+
+message OrderResponse {
+  string message = 1;
+}
+
+// Messages for Charge Service
+message ChargeRequest {
+  string customer_id = 1;
+  float amount = 2;
+}
+
+message ChargeResponse {
+  string message = 1;
+}

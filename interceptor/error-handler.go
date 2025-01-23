@@ -1,72 +1,16 @@
-package main
+package interceptor
 
 import (
 	"context"
-	"log"
 	"log/slog"
-	"net"
 	"runtime/debug"
 
-	"grpc-test/domain"
-	pb "grpc-test/proto"
-
 	errlib "github.com/revotech-group/go-lib/errors"
-	logger "github.com/revotech-group/go-lib/log"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
-
-type ProductOrderService struct {
-	pb.UnimplementedProductOrderServiceServer
-}
-
-func (s *ProductOrderService) ListProducts(ctx context.Context, req *pb.Empty) (*pb.ProductList, error) {
-	// Simulating a product list response
-	return &pb.ProductList{
-		Products: []*pb.Product{
-			{Id: "1", Name: "Product 1", Price: 10.0},
-			{Id: "2", Name: "Product 2", Price: 20.0},
-		},
-	}, nil
-}
-
-func (s *ProductOrderService) PlaceOrder(ctx context.Context, req *pb.OrderRequest) (*pb.OrderResponse, error) {
-	// st := status.New(codes.Unknown, "some unknown error occured")
-	// return nil, fmt.Errorf("some unknown error")
-
-	// return &pb.OrderResponse{
-	// 	OrderId:    "12345",
-	// 	TotalPrice: 30.0,
-	// }, nil
-
-	// panic("some error occured")
-
-	return nil, domain.ProductNotFoundErr()
-}
-
-func main() {
-	serviceName := "ProductOrderService"
-	debugMode := true
-	logger.SetupDefaultLogger(slog.LevelDebug, true)
-
-	server := grpc.NewServer(
-		grpc.UnaryInterceptor(UnaryServerInterceptor(serviceName, debugMode)),
-	)
-
-	pb.RegisterProductOrderServiceServer(server, &ProductOrderService{})
-
-	listener, err := net.Listen("tcp", ":50051")
-	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
-	}
-
-	log.Println("Starting gRPC server on portt 50051...")
-	if err := server.Serve(listener); err != nil {
-		log.Fatalf("Failed to serve: %v", err)
-	}
-}
 
 func UnaryServerInterceptor(serviceName string, debugMode bool) grpc.UnaryServerInterceptor {
 	return func(
