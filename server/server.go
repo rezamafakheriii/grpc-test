@@ -2,16 +2,16 @@ package main
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"log"
+	"log/slog"
 	"net"
-	"runtime"
 	"runtime/debug"
 
 	"grpc-test/domain"
 	pb "grpc-test/proto"
 
+	errlib "github.com/revotech-group/go-lib/errors"
+	logger "github.com/revotech-group/go-lib/log"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -34,36 +34,27 @@ func (s *ProductOrderService) ListProducts(ctx context.Context, req *pb.Empty) (
 
 func (s *ProductOrderService) PlaceOrder(ctx context.Context, req *pb.OrderRequest) (*pb.OrderResponse, error) {
 	// st := status.New(codes.Unknown, "some unknown error occured")
-	// return nil, st.Err()
+	// return nil, fmt.Errorf("some unknown error")
 
-	return &pb.OrderResponse{
-		OrderId:    "12345",
-		TotalPrice: 30.0,
-	}, nil
+	// return &pb.OrderResponse{
+	// 	OrderId:    "12345",
+	// 	TotalPrice: 30.0,
+	// }, nil
 
-	// return nil, &domain.ValidationErr{
-	// 	DomainErr: &domain.DomainErr{
-	// 		Code:    "P_1112222200",
-	// 		Message: "some argument are invalid",
-	// 	},
-	// 	InvalidFields: []domain.InvalidField{
-	// 		{
-	// 			Field:       "order_id",
-	// 			Description: "order id must be a numeric number",
-	// 		},
-	// 	},
-	// }
+	// panic("some error occured")
+
+	return nil, domain.ProductNotFoundErr()
 }
 
 func main() {
 	serviceName := "ProductOrderService"
 	debugMode := true
+	logger.SetupDefaultLogger(slog.LevelDebug, true)
 
 	server := grpc.NewServer(
 		grpc.UnaryInterceptor(UnaryServerInterceptor(serviceName, debugMode)),
 	)
 
-	// Register the ProductOrderService
 	pb.RegisterProductOrderServiceServer(server, &ProductOrderService{})
 
 	listener, err := net.Listen("tcp", ":50051")
@@ -84,7 +75,6 @@ func UnaryServerInterceptor(serviceName string, debugMode bool) grpc.UnaryServer
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (resp interface{}, err error) {
-		// Defer recovery from panic
 		defer func() {
 			if r := recover(); r != nil {
 				if debugMode {
@@ -100,9 +90,23 @@ func UnaryServerInterceptor(serviceName string, debugMode bool) grpc.UnaryServer
 		resp, err = handler(ctx, req)
 
 		if err != nil {
-			if domain.IsDomainError(err) {
-				return nil, MapDomainErrorToGRPC(err.(*domain.ValidationErr), serviceName)
+
+			if IsAppError(err) {
+				appErr := err.(errlib.AppError)
+
+				slog.Error("app error",
+					slog.String("method", info.FullMethod),
+					slog.String("error", appErr.Error()),
+					slog.Any("stack_trace", appErr.StackTrace()),
+				)
+
+				return nil, MapAppErrorToGRPC(err.(errlib.AppError), serviceName)
 			}
+
+			slog.Error("gRPC error",
+				slog.String("method", info.FullMethod),
+				slog.String("error", err.Error()),
+			)
 			return nil, err
 		}
 
@@ -110,27 +114,26 @@ func UnaryServerInterceptor(serviceName string, debugMode bool) grpc.UnaryServer
 	}
 }
 
-func MapDomainErrorToGRPC(domainErr *domain.ValidationErr, serviceName string) error {
-	message := domainErr.Message
+func MapAppErrorToGRPC(appErr errlib.AppError, serviceName string) error {
+	message := appErr.GetMessage()
 
 	var grpcCode codes.Code
 
-	var notFoundErr *domain.NotFoundErr
-	if errors.As(domainErr, &notFoundErr) {
+	switch appErr.GetName() {
+	case errlib.NameNotFound:
 		grpcCode = codes.NotFound
-	}
-
-	var validationErr *domain.ValidationErr
-	if errors.As(domainErr, &validationErr) {
+	case errlib.NameBadRequest:
 		grpcCode = codes.InvalidArgument
+	case errlib.NameInternalServerError:
+		grpcCode = codes.Internal
+	default:
+		grpcCode = codes.Unknown
 	}
 
 	st := status.New(grpcCode, message)
 
 	errorInfo := &errdetails.ErrorInfo{
-		Domain: "product service",
-		// Metadata: ,
-		Reason: validationErr.Code,
+		Domain: serviceName,
 	}
 
 	stWithDetails, err := st.WithDetails(errorInfo)
@@ -138,41 +141,20 @@ func MapDomainErrorToGRPC(domainErr *domain.ValidationErr, serviceName string) e
 		return st.Err()
 	}
 
-	if validationErr != nil {
-		// If there are validation errors, include them as BadRequest details
-		if len(validationErr.InvalidFields) > 0 {
-			badRequest := &errdetails.BadRequest{}
-			for _, ve := range validationErr.InvalidFields {
-				badRequest.FieldViolations = append(badRequest.FieldViolations, &errdetails.BadRequest_FieldViolation{
-					Field:       ve.Field,
-					Description: ve.Description,
-				})
-			}
-			stWithDetails, err = stWithDetails.WithDetails(badRequest)
-			if err != nil {
-				return st.Err()
-			}
-		}
-	}
-
 	return stWithDetails.Err()
 }
 
-func recoverFrom(serviceName string, r any) error {
+func recoverFrom(serviceName string, _ any) error {
 
-	// Capture the stack trace
-	stack := make([]byte, 64<<10) // 64 KB
-	stack = stack[:runtime.Stack(stack, false)]
+	// // Capture the stack trace
+	// stack := make([]byte, 64<<10) // 64 KB
+	// stack = stack[:runtime.Stack(stack, false)]
 
 	st := status.New(codes.Internal, "Internal server error")
 
 	errorInfo := &errdetails.ErrorInfo{
 		Reason: "INTERNAL_SERVER_ERROR",
 		Domain: serviceName,
-		Metadata: map[string]string{
-			"panic": fmt.Sprintf("%v", r),
-			// "stack": string(stack),
-		},
 	}
 
 	stWithDetails, err := st.WithDetails(errorInfo)
@@ -181,4 +163,11 @@ func recoverFrom(serviceName string, r any) error {
 	}
 
 	return stWithDetails.Err()
+}
+
+func IsAppError(err error) bool {
+	if _, ok := err.(errlib.AppError); ok {
+		return true
+	}
+	return false
 }

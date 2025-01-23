@@ -7,7 +7,6 @@ import (
 
 	pb "grpc-test/proto"
 
-	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
@@ -35,16 +34,9 @@ func main() {
 	}
 
 	orderResponse, err := client.PlaceOrder(ctx, order)
+
 	if err != nil {
 		errorStatus := status.Convert(err)
-		for _, d := range errorStatus.Details() {
-			switch info := d.(type) {
-			case *errdetails.BadRequest:
-				log.Printf("Request Field Invalid: %s", info)
-			default:
-				log.Printf("Unexpected error type: %s", info)
-			}
-		}
 		log.Print(errorStatus)
 		return
 	}
