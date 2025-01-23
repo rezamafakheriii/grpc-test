@@ -112,3 +112,19 @@ The `slog` stack trace shows where the log is called, not the origin of the erro
 
 
 Feel free to modify and expand this `README.md` as needed!
+
+## Example
+
+Here are three images demonstrating the flow and functionality of the project:
+
+1. **Image 1**:  
+   ![Image 1](https://github.com/rezamafakheriii/grpc-test/blob/main/examples/client.png?raw=true)  
+   *Client Logs*
+
+2. **Image 2**:  
+   ![Image 2](https://github.com/rezamafakheriii/grpc-test/blob/main/examples/order.png?raw=true)  
+   *Order Service Logs*
+
+3. **Image 3**:  
+   ![Image 3](https://github.com/rezamafakheriii/grpc-test/blob/main/examples/payment.png?raw=true)  
+   *Payment Service Logs*
