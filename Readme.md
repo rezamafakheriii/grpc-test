@@ -5,8 +5,6 @@ This project demonstrates a simple gRPC setup with two servers (order and paymen
 1. The client calls the Order Server.
 2. The Order Server internally calls the Payment Server.
 
-The purpose of this project is to showcase error handling in gRPC services using a custom error package from go-lib and logging errors in interceptors.
-
 ## Project Structure
 
 - **Order Server**: Handles order requests and calls the Payment Server.
