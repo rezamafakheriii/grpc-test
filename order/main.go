@@ -6,9 +6,13 @@ import (
 	"log"
 	"log/slog"
 	"net"
+	"reflect"
 
 	"grpc-test/interceptor"
+	"grpc-test/proto"
 	pb "grpc-test/proto" // Replace with the correct import path
+
+	"github.com/revotech-group/go-lib/errors"
 
 	logger "github.com/revotech-group/go-lib/log"
 	"google.golang.org/grpc"
@@ -28,9 +32,27 @@ func (s *orderServer) PlaceOrder(ctx context.Context, req *pb.OrderRequest) (*pb
 		Amount:     float32(req.Quantity) * 100, // Example calculation
 	})
 
-	// s.chargeClient.ChargeCustomer()
-
 	if err != nil {
+		appErr, err := errors.FromGRPCErr(err)
+		if err != nil {
+			log.Print("internal server error")
+			return nil, err
+		}
+		log.Printf("appErr: %#v", appErr)
+		if grpcErr := appErr.GetGRPCErr(); grpcErr != nil {
+			log.Printf("Type of grpcErr: %s", reflect.TypeOf(grpcErr))
+			switch grpcErr := grpcErr.(type) {
+			case *proto.NotEnoughCharge:
+				// Handle the specific error type *proto.NotEnoughCharge
+				log.Println("Received NotEnoughCharge error")
+				// Do something specific to this error
+			default:
+				// Handle other types or unexpected errors
+				log.Printf("Received unexpected GRPC error: %T", grpcErr)
+			}
+		} else {
+			log.Println("No GRPC error found in appErr")
+		}
 		return nil, err
 	}
 
@@ -38,7 +60,6 @@ func (s *orderServer) PlaceOrder(ctx context.Context, req *pb.OrderRequest) (*pb
 		Message: fmt.Sprintf("Order placed for %d x %s. %s", req.Quantity, req.Product, chargeResponse.Message),
 	}, nil
 
-	// return nil, domain.ProductNotFoundErr()
 }
 
 func main() {

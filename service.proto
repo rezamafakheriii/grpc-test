@@ -40,10 +40,10 @@ message ChargeResponse {
   string message = 1;
 }
 
-enum Data {
-  DATA_UNSPECIFIED = 0;
-  DATA_SEARCH = 1 [deprecated = true];
-  DATA_DISPLAY = 2 [
-    (string_name) = "display_value"
-  ];
+message Err {
+
 }
+
+message NotEnoughChargeErr {}
+
+message FooErr {}

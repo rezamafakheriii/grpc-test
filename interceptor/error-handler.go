@@ -2,14 +2,15 @@ package interceptor
 
 import (
 	"context"
+	"log"
 	"log/slog"
-	"runtime/debug"
 
 	errlib "github.com/revotech-group/go-lib/errors"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/protoadapt"
 )
 
 func UnaryServerInterceptor(serviceName string, debugMode bool) grpc.UnaryServerInterceptor {
@@ -20,24 +21,24 @@ func UnaryServerInterceptor(serviceName string, debugMode bool) grpc.UnaryServer
 		handler grpc.UnaryHandler,
 	) (resp interface{}, err error) {
 
-		defer func() {
-			if r := recover(); r != nil {
-				if debugMode {
-					slog.Error("Recovered from panic",
-						slog.String("method", info.FullMethod),
-						slog.Any("error", r),
-						slog.String("stack_trace", string(debug.Stack())),
-					)
-				} else {
-					slog.Error("Recovered from panic",
-						slog.String("method", info.FullMethod),
-						slog.Any("error", r),
-					)
-				}
+		// defer func() {
+		// 	if r := recover(); r != nil {
+		// 		if debugMode {
+		// 			slog.Error("Recovered from panic",
+		// 				slog.String("method", info.FullMethod),
+		// 				slog.Any("error", r),
+		// 				slog.String("stack_trace", string(debug.Stack())),
+		// 			)
+		// 		} else {
+		// 			slog.Error("Recovered from panic",
+		// 				slog.String("method", info.FullMethod),
+		// 				slog.Any("error", r),
+		// 			)
+		// 		}
 
-				err = recoverFrom(serviceName, r)
-			}
-		}()
+		// 		err = recoverFrom(serviceName, r)
+		// 	}
+		// }()
 
 		resp, err = handler(ctx, req)
 
@@ -84,13 +85,30 @@ func MapAppErrorToGRPC(appErr errlib.AppError, serviceName string) error {
 
 	st := status.New(grpcCode, message)
 
-	errorInfo := &errdetails.ErrorInfo{
-		Domain: serviceName,
-	}
+	errorInfo := appErr.ToGRPCErrorInfo(serviceName)
 
 	stWithDetails, err := st.WithDetails(errorInfo)
 	if err != nil {
 		return st.Err()
+	}
+
+	// if appErr.GetGRPCErr() != nil {
+	// 	log.Printf("grpc err detected")
+	// 	stWithDetails, err := stWithDetails.WithDetails(appErr.GetGRPCErr())
+	// 	if err != nil {
+	// 		return st.Err()
+	// 	}
+	// 	return stWithDetails.Err()
+	// }
+
+	if grpcMsg, ok := appErr.(protoadapt.MessageV1); ok {
+		stWithDetails, err := stWithDetails.WithDetails(grpcMsg)
+		if err != nil {
+			return st.Err()
+		}
+		return stWithDetails.Err()
+	} else {
+		log.Printf("not campatible")
 	}
 
 	return stWithDetails.Err()

@@ -21,7 +21,7 @@ type chargeServer struct {
 func (s *chargeServer) ChargeCustomer(ctx context.Context, req *pb.ChargeRequest) (*pb.ChargeResponse, error) {
 	log.Printf("Charge request received for customer %s: $%.2f", req.CustomerId, req.Amount)
 	// return &pb.ChargeResponse{Message: fmt.Sprintf("Charged $%.2f to customer %s", req.Amount, req.CustomerId)}, nil
-	return nil, domain.NotEnoughCreditErr()
+	return nil, domain.ErrNotEnoughCredit()
 }
 
 func main() {
