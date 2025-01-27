@@ -1,5 +1,11 @@
 syntax = "proto3";
 
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.EnumValueOptions {
+  optional string string_name = 123456789;
+}
+
 package service;
 
 option go_package = ".;proto";
@@ -32,4 +38,12 @@ message ChargeRequest {
 
 message ChargeResponse {
   string message = 1;
+}
+
+enum Data {
+  DATA_UNSPECIFIED = 0;
+  DATA_SEARCH = 1 [deprecated = true];
+  DATA_DISPLAY = 2 [
+    (string_name) = "display_value"
+  ];
 }

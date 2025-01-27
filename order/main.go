@@ -27,6 +27,9 @@ func (s *orderServer) PlaceOrder(ctx context.Context, req *pb.OrderRequest) (*pb
 		CustomerId: "12345",                     // Hardcoded for simplicity
 		Amount:     float32(req.Quantity) * 100, // Example calculation
 	})
+
+	// s.chargeClient.ChargeCustomer()
+
 	if err != nil {
 		return nil, err
 	}
