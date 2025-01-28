@@ -10,7 +10,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/protoadapt"
 )
 
 func UnaryServerInterceptor(serviceName string, debugMode bool) grpc.UnaryServerInterceptor {
@@ -92,24 +91,25 @@ func MapAppErrorToGRPC(appErr errlib.AppError, serviceName string) error {
 		return st.Err()
 	}
 
-	// if appErr.GetGRPCErr() != nil {
-	// 	log.Printf("grpc err detected")
-	// 	stWithDetails, err := stWithDetails.WithDetails(appErr.GetGRPCErr())
-	// 	if err != nil {
-	// 		return st.Err()
-	// 	}
-	// 	return stWithDetails.Err()
-	// }
-
-	if grpcMsg, ok := appErr.(protoadapt.MessageV1); ok {
-		stWithDetails, err := stWithDetails.WithDetails(grpcMsg)
+	grpcErr := appErr.GetGRPCErr()
+	if grpcErr != nil {
+		log.Printf("grpc err detected")
+		stWithDetails, err := stWithDetails.WithDetails(grpcErr)
 		if err != nil {
 			return st.Err()
 		}
 		return stWithDetails.Err()
-	} else {
-		log.Printf("not campatible")
 	}
+
+	// if grpcMsg, ok := grpcErr.(protoadapt.MessageV1); ok {
+	// 	stWithDetails, err := stWithDetails.WithDetails(grpcMsg)
+	// 	if err != nil {
+	// 		return st.Err()
+	// 	}
+	// 	return stWithDetails.Err()
+	// } else {
+	// 	log.Printf("not campatible")
+	// }
 
 	return stWithDetails.Err()
 }

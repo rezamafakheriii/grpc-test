@@ -33,22 +33,18 @@ func (s *orderServer) PlaceOrder(ctx context.Context, req *pb.OrderRequest) (*pb
 	})
 
 	if err != nil {
-		appErr, err := errors.FromGRPCErr(err)
-		if err != nil {
+		appErr, e := errors.FromGRPCErr(err)
+		if e != nil {
 			log.Print("internal server error")
-			return nil, err
+			return nil, e
 		}
-		log.Printf("appErr: %#v", appErr)
-		if grpcErr := appErr.GetGRPCErr(); grpcErr != nil {
-			log.Printf("Type of grpcErr: %s", reflect.TypeOf(grpcErr))
-			switch grpcErr := grpcErr.(type) {
+		if detail := appErr.GetGRPCErr(); detail != nil {
+			log.Printf("Type of detail: %s", reflect.TypeOf(detail))
+			switch t := detail.(type) {
 			case *proto.NotEnoughCharge:
-				// Handle the specific error type *proto.NotEnoughCharge
 				log.Println("Received NotEnoughCharge error")
-				// Do something specific to this error
 			default:
-				// Handle other types or unexpected errors
-				log.Printf("Received unexpected GRPC error: %T", grpcErr)
+				log.Printf("Received unexpected GRPC error: %T", t)
 			}
 		} else {
 			log.Println("No GRPC error found in appErr")
