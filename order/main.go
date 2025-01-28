@@ -6,7 +6,6 @@ import (
 	"log"
 	"log/slog"
 	"net"
-	"reflect"
 
 	"grpc-test/interceptor"
 	"grpc-test/proto"
@@ -39,9 +38,10 @@ func (s *orderServer) PlaceOrder(ctx context.Context, req *pb.OrderRequest) (*pb
 			return nil, e
 		}
 		if detail := appErr.GetGRPCErr(); detail != nil {
-			log.Printf("Type of detail: %s", reflect.TypeOf(detail))
 			switch t := detail.(type) {
-			case *proto.NotEnoughCharge:
+			case *proto.ErrGatewayNotReachable:
+				log.Println("Received ErrGatewayNotReachable error")
+			case *proto.ErrNotEnoughCharge:
 				log.Println("Received NotEnoughCharge error")
 			default:
 				log.Printf("Received unexpected GRPC error: %T", t)

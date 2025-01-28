@@ -4,7 +4,9 @@ import (
 	"context"
 	"log"
 	"log/slog"
+	"math/rand"
 	"net"
+	"time"
 
 	"grpc-test/domain"
 	"grpc-test/interceptor"
@@ -20,8 +22,16 @@ type chargeServer struct {
 
 func (s *chargeServer) ChargeCustomer(ctx context.Context, req *pb.ChargeRequest) (*pb.ChargeResponse, error) {
 	log.Printf("Charge request received for customer %s: $%.2f", req.CustomerId, req.Amount)
-	// return &pb.ChargeResponse{Message: fmt.Sprintf("Charged $%.2f to customer %s", req.Amount, req.CustomerId)}, nil
-	return nil, domain.ErrNotEnoughCredit()
+
+	// Seed the random number generator
+	rand.Seed(time.Now().UnixNano())
+
+	// Randomly choose one of the two errors
+	if rand.Intn(2) == 0 {
+		return nil, domain.ErrNotEnoughCredit()
+	} else {
+		return nil, domain.ErrGatewayNotReachable()
+	}
 }
 
 func main() {

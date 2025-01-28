@@ -44,6 +44,6 @@ message Err {
 
 }
 
-message NotEnoughChargeErr {}
+message ErrNotEnoughCharge {}
 
-message FooErr {}
+message ErrGatewayNotReachable {}
