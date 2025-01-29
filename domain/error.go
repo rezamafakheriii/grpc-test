@@ -10,9 +10,9 @@ func ProductNotFoundErr() error {
 }
 
 func ErrNotEnoughCredit() error {
-	return lib.ErrBadRequest().WithMessage("Not enough credit").WithGRPCErr(&proto.ErrNotEnoughCharge{})
+	return lib.ErrBadRequest().WithMessage("Not enough credit").WithProtobufError(&proto.ErrNotEnoughCharge{})
 }
 
 func ErrGatewayNotReachable() error {
-	return lib.ErrBadRequest().WithMessage("Gateway not reachable").WithGRPCErr(&proto.ErrGatewayNotReachable{})
+	return lib.ErrBadRequest().WithMessage("Gateway not reachable").WithProtobufError(&proto.ErrGatewayNotReachable{})
 }

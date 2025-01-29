@@ -7,11 +7,10 @@ import (
 	"log/slog"
 	"net"
 
-	"grpc-test/interceptor"
-	"grpc-test/proto"
 	pb "grpc-test/proto" // Replace with the correct import path
 
 	"github.com/revotech-group/go-lib/errors"
+	"github.com/revotech-group/go-lib/grpc/interceptors"
 
 	logger "github.com/revotech-group/go-lib/log"
 	"google.golang.org/grpc"
@@ -32,16 +31,13 @@ func (s *orderServer) PlaceOrder(ctx context.Context, req *pb.OrderRequest) (*pb
 	})
 
 	if err != nil {
-		appErr, e := errors.FromGRPCErr(err)
-		if e != nil {
-			log.Print("internal server error")
-			return nil, e
-		}
-		if detail := appErr.GetGRPCErr(); detail != nil {
+		appErr := errors.FromGrpcError(err)
+
+		if detail := appErr.GetProtobufError(); detail != nil {
 			switch t := detail.(type) {
-			case *proto.ErrGatewayNotReachable:
+			case *pb.ErrGatewayNotReachable:
 				log.Println("Received ErrGatewayNotReachable error")
-			case *proto.ErrNotEnoughCharge:
+			case *pb.ErrNotEnoughCharge:
 				log.Println("Received NotEnoughCharge error")
 			default:
 				log.Printf("Received unexpected GRPC error: %T", t)
@@ -59,8 +55,6 @@ func (s *orderServer) PlaceOrder(ctx context.Context, req *pb.OrderRequest) (*pb
 }
 
 func main() {
-	serviceName := "order-service"
-	debugMode := true
 	logger.SetupDefaultLogger(slog.LevelDebug, true)
 	// Connect to the Charge Server
 	chargeConn, err := grpc.Dial("localhost:50052", grpc.WithInsecure(), grpc.WithBlock())
@@ -78,7 +72,7 @@ func main() {
 	}
 
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(interceptor.UnaryServerInterceptor(serviceName, debugMode)),
+		grpc.UnaryInterceptor(interceptors.UnaryServerErrorInterceptor()),
 	)
 	pb.RegisterOrderServer(grpcServer, &orderServer{chargeClient: chargeClient})
 

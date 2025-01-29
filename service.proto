@@ -20,6 +20,20 @@ service Charge {
   rpc ChargeCustomer (ChargeRequest) returns (ChargeResponse);
 }
 
+// Currency Service
+service Currency {
+  rpc SendExchangeRates (stream ExchangeRate) returns (Empty);
+}
+
+message ExchangeRate {
+  string currency_from = 1;
+  string currency_to = 2;
+  double rate = 3;  // exchange rate
+  string timestamp = 4; // time when the rate is valid
+}
+
+message Empty {}
+
 // Messages for Order Service
 message OrderRequest {
   string product = 1;
