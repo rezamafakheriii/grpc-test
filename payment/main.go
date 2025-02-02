@@ -75,7 +75,7 @@ func subscribeToExchangeRates() {
 }
 
 func main() {
-	go subscribeToExchangeRates()
+	// go subscribeToExchangeRates()
 
 	logger.SetupDefaultLogger(slog.LevelDebug, true)
 	lis, err := net.Listen("tcp", ":50052")

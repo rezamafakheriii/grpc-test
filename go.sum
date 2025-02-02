@@ -18,6 +18,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/revotech-group/go-lib v1.4.2 h1:KVTgly0jifcqkt65DVr85F3LQD0JMc7v7brjWylGORQ=
 github.com/revotech-group/go-lib v1.4.2/go.mod h1:VNDN5y3YiZZaw26PnmpERul/WsLz+s51H4k9inPMtn4=
+github.com/revotech-group/go-lib v1.4.4 h1:rwyphu8GXOWU861vFGXzDFhVLtmhRj3L6N/QCLe9yKM=
+github.com/revotech-group/go-lib v1.4.4/go.mod h1:VNDN5y3YiZZaw26PnmpERul/WsLz+s51H4k9inPMtn4=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

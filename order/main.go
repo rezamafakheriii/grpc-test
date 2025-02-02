@@ -31,8 +31,7 @@ func (s *orderServer) PlaceOrder(ctx context.Context, req *pb.OrderRequest) (*pb
 	})
 
 	if err != nil {
-		appErr := errors.FromGrpcError(err)
-
+		appErr := err.(errors.AppError)
 		if detail := appErr.GetProtobufError(); detail != nil {
 			switch t := detail.(type) {
 			case *pb.ErrGatewayNotReachable:
@@ -57,7 +56,7 @@ func (s *orderServer) PlaceOrder(ctx context.Context, req *pb.OrderRequest) (*pb
 func main() {
 	logger.SetupDefaultLogger(slog.LevelDebug, true)
 	// Connect to the Charge Server
-	chargeConn, err := grpc.Dial("localhost:50052", grpc.WithInsecure(), grpc.WithBlock())
+	chargeConn, err := grpc.Dial("localhost:50052", grpc.WithInsecure(), grpc.WithBlock(), grpc.WithUnaryInterceptor(interceptors.UnaryClientErrorInterceptor()))
 	if err != nil {
 		log.Fatalf("Failed to connect to Charge Server: %v", err)
 	}

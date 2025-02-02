@@ -3,6 +3,8 @@ package domain
 import (
 	"grpc-test/lib"
 	"grpc-test/proto"
+
+	"github.com/revotech-group/go-lib/errors"
 )
 
 func ProductNotFoundErr() error {
@@ -14,5 +16,5 @@ func ErrNotEnoughCredit() error {
 }
 
 func ErrGatewayNotReachable() error {
-	return lib.ErrBadRequest().WithMessage("Gateway not reachable").WithProtobufError(&proto.ErrGatewayNotReachable{})
+	return errors.NewAppError(lib.NameTooManyRequests, "Bad request, invalid or missing parameter", 500).WithMessage("Gateway not reachable").WithProtobufError(&proto.ErrGatewayNotReachable{})
 }
